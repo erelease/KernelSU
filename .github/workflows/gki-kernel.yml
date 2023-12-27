@@ -110,6 +110,7 @@ jobs:
           repo --version
           repo --trace sync -c -j$(nproc --all) --no-tags
           df -h
+          
 
       # - name: Setup KernelSU
       #   env:
@@ -137,39 +138,6 @@ jobs:
 
       - name: Symbol magic
         run: |
-          echo "[+] Export all symbol from abi_gki_aarch64.xml"
-          COMMON_ROOT=$GITHUB_WORKSPACE/android-kernel/common
-          KSU_ROOT=$GITHUB_WORKSPACE/KernelSU
-          ABI_XML=$COMMON_ROOT/android/abi_gki_aarch64.xml
-          SYMBOL_LIST=$COMMON_ROOT/android/abi_gki_aarch64
-          # python3 $KSU_ROOT/scripts/abi_gki_all.py $ABI_XML > $SYMBOL_LIST
-          echo "[+] Add KernelSU symbols"
-          cat $KSU_ROOT/kernel/export_symbol.txt | awk '{sub("[ \t]+","");print "  "$0}' >> $SYMBOL_LIST
-
-      - name: Setup ccache
-        if: inputs.use_cache == true
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: gki-kernel-aarch64-${{ inputs.version_name }}
-          max-size: 2G
-          save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-
-      - name: Make working directory clean to avoid dirty
-        working-directory: android-kernel
-        run: |
-          rm common/android/abi_gki_protected_exports_* || echo "No protected exports!"
-          git config --global user.email "bot@kernelsu.org"
-          git config --global user.name "KernelSUBot"
-          cd common/ && git add -A && git commit -a -m "Add KernelSU"
-          repo status
-
-      - name: Build boot.img
-        working-directory: android-kernel
-        run: |
-          if [ ! -z ${{ vars.EXPECTED_SIZE }} ] && [ ! -z ${{ vars.EXPECTED_HASH }} ]; then
-            export KSU_EXPECTED_SIZE=${{ vars.EXPECTED_SIZE }}
-            export KSU_EXPECTED_HASH=${{ vars.EXPECTED_HASH }}
-          fi
           echo "CONFIG_NAMESPACES=y
           CONFIG_NET_NS=y
           CONFIG_PID_NS=y
@@ -248,6 +216,40 @@ jobs:
           CONFIG_BLK_DEV_DM=y
           CONFIG_DM_THIN_PROVISIONING=y
           CONFIG_OVERLAY_FS=y" >> common/arch/arm64/configs/gki_defconfig
+          echo "[+] Export all symbol from abi_gki_aarch64.xml"
+          COMMON_ROOT=$GITHUB_WORKSPACE/android-kernel/common
+          KSU_ROOT=$GITHUB_WORKSPACE/KernelSU
+          ABI_XML=$COMMON_ROOT/android/abi_gki_aarch64.xml
+          SYMBOL_LIST=$COMMON_ROOT/android/abi_gki_aarch64
+          # python3 $KSU_ROOT/scripts/abi_gki_all.py $ABI_XML > $SYMBOL_LIST
+          echo "[+] Add KernelSU symbols"
+          cat $KSU_ROOT/kernel/export_symbol.txt | awk '{sub("[ \t]+","");print "  "$0}' >> $SYMBOL_LIST
+
+      - name: Setup ccache
+        if: inputs.use_cache == true
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: gki-kernel-aarch64-${{ inputs.version_name }}
+          max-size: 2G
+          save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+      - name: Make working directory clean to avoid dirty
+        working-directory: android-kernel
+        run: |
+          rm common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          git config --global user.email "bot@kernelsu.org"
+          git config --global user.name "KernelSUBot"
+          cd common/ && git add -A && git commit -a -m "Add KernelSU"
+          repo status
+
+      - name: Build boot.img
+        working-directory: android-kernel
+        run: |
+          
+          if [ ! -z ${{ vars.EXPECTED_SIZE }} ] && [ ! -z ${{ vars.EXPECTED_HASH }} ]; then
+            export KSU_EXPECTED_SIZE=${{ vars.EXPECTED_SIZE }}
+            export KSU_EXPECTED_HASH=${{ vars.EXPECTED_HASH }}
+          fi
           if [ -e build/build.sh ]; then
             CCACHE="/usr/bin/ccache" LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh
           else
