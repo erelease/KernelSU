@@ -117,8 +117,8 @@ jobs:
           cd $GITHUB_WORKSPACE
           sudo apt-get install repo -y
           mkdir android-kernel && cd android-kernel
-          repo init --depth=1 --u https://github.com/erelease/manifest -b common-${{ inputs.tag }} --repo-rev=v2.16
-          REMOTE_BRANCH="9061d4d4cf759bbbed66e6e7ada2e1efbc7c939a        refs/heads/android12-5.10-2023-07"
+          repo init --depth=1 --u git@github.com:erelease/manifest.git -b common-${{ inputs.tag }} --repo-rev=v2.16
+          REMOTE_BRANCH="0457351433384bbc1f3921f7ca5bb84946766043        refs/heads/android12-5.10-2023-07"
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
           if grep -q deprecated <<< $REMOTE_BRANCH; then
             echo "Found deprecated branch: ${{ inputs.tag }}"
