@@ -92,6 +92,24 @@ jobs:
             echo "UPLOAD=false" >> $GITHUB_OUTPUT
           fi
 
+      # - name: Setup kernel source
+      #   run: |
+      #     echo "Free space:"
+      #     df -h
+      #     cd $GITHUB_WORKSPACE
+      #     sudo apt-get install repo -y
+      #     mkdir android-kernel && cd android-kernel
+      #     repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${{ inputs.tag }} --repo-rev=v2.16
+      #     REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${{ inputs.tag }})
+      #     DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
+      #     if grep -q deprecated <<< $REMOTE_BRANCH; then
+      #       echo "Found deprecated branch: ${{ inputs.tag }}"
+      #       sed -i 's/"${{ inputs.tag }}"/"deprecated\/${{ inputs.tag }}"/g' $DEFAULT_MANIFEST_PATH
+      #       cat $DEFAULT_MANIFEST_PATH
+      #     fi
+      #     repo --version
+      #     repo --trace sync -c -j$(nproc --all) --no-tags
+      #     df -h
       - name: Setup kernel source
         run: |
           echo "Free space:"
@@ -99,8 +117,8 @@ jobs:
           cd $GITHUB_WORKSPACE
           sudo apt-get install repo -y
           mkdir android-kernel && cd android-kernel
-          repo init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${{ inputs.tag }} --repo-rev=v2.16
-          REMOTE_BRANCH=$(git ls-remote https://github.com/erelease/Android_kernel_commo ${{ inputs.tag }})
+          repo init --depth=1 --u https://github.com/erelease/manifest -b common-${{ inputs.tag }} --repo-rev=v2.16
+          REMOTE_BRANCH="9061d4d4cf759bbbed66e6e7ada2e1efbc7c939a        refs/heads/android12-5.10-2023-07"
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
           if grep -q deprecated <<< $REMOTE_BRANCH; then
             echo "Found deprecated branch: ${{ inputs.tag }}"
@@ -110,6 +128,9 @@ jobs:
           repo --version
           repo --trace sync -c -j$(nproc --all) --no-tags
           df -h
+
+
+
 
       # - name: Setup KernelSU
       #   env:
@@ -171,7 +192,7 @@ jobs:
             export KSU_EXPECTED_HASH=${{ vars.EXPECTED_HASH }}
           fi
           if [ -e build/build.sh ]; then
-            CCACHE="/usr/bin/ccache" LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh
+            CCACHE="/usr/bin/ccache" LTO=thin BUILD_CONFIG=common/build.config.gki_docker.aarch64 build/build.sh
           else
             tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
           fi
